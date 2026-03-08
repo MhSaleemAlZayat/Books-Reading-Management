@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bookslib-postgres
+    environment:
+      POSTGRES_DB: bookslib
+      POSTGRES_USER: bookslib
+      POSTGRES_PASSWORD: bookslib
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookslib -d bookslib"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bookslib-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: change-me
+      DATABASE_URL: postgresql+psycopg://bookslib:bookslib@postgres:5432/bookslib
+      STORAGE_ROOT: /app/storage
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/storage:/app/storage
+    restart: unless-stopped
+
+volumes:
+  pg_data:
