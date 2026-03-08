@@ -1,4 +1,3 @@
-import shutil
 import uuid
 from pathlib import Path
 
@@ -19,7 +18,11 @@ def ensure_storage_dirs() -> None:
 def save_upload(upload: UploadFile, folder: str) -> tuple[str, str, int]:
     ext = Path(upload.filename or "").suffix
     file_name = f"{uuid.uuid4()}{ext}"
-    target = settings.storage_path / folder / file_name
+    target = (settings.storage_path / folder / file_name).resolve()
+
+    # Ensure the resolved path stays within the storage directory
+    if not str(target).startswith(str(settings.storage_path)):
+        raise ValueError("Invalid file path")
 
     size = 0
     with target.open("wb") as out:

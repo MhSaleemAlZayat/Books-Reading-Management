@@ -11,13 +11,15 @@ async function requestJson(path, options = {}) {
     headers,
   })
   if (!response.ok) {
+    const text = await response.text()
+    let message = `Request failed: ${response.status}`
     try {
-      const json = await response.json()
-      throw new Error(json?.error?.message || `Request failed: ${response.status}`)
+      const json = JSON.parse(text)
+      if (json?.error?.message) message = json.error.message
     } catch {
-      const text = await response.text()
-      throw new Error(text || `Request failed: ${response.status}`)
+      if (text) message = text
     }
+    throw new Error(message)
   }
 
   if (response.status === 204) return null

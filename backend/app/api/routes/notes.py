@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -129,8 +129,8 @@ def list_notes_global(
     if userId:
         stmt = stmt.where(Note.user_id == userId)
 
-    all_notes = list(db.scalars(stmt.order_by(Note.created_at.desc())))
-    start = (page - 1) * pageSize
-    end = start + pageSize
-    selected = all_notes[start:end]
-    return NotesListResponse(items=[as_public(n) for n in selected], total=len(all_notes))
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    selected = list(
+        db.scalars(stmt.order_by(Note.created_at.desc()).offset((page - 1) * pageSize).limit(pageSize))
+    )
+    return NotesListResponse(items=[as_public(n) for n in selected], total=total)

@@ -64,6 +64,7 @@ class BookDetailsResponse(BaseModel):
     format: Optional[str] = None
     shelf: Optional[str] = None
     ownerId: str
+    progressPercent: int = 0
     tags: list[str]
     file: Optional[FilePublic] = None
     createdAt: datetime
