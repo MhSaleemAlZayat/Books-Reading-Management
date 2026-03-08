@@ -18,10 +18,11 @@ def ensure_storage_dirs() -> None:
 def save_upload(upload: UploadFile, folder: str) -> tuple[str, str, int]:
     ext = Path(upload.filename or "").suffix
     file_name = f"{uuid.uuid4()}{ext}"
-    target = (settings.storage_path / folder / file_name).resolve()
+    storage_root = settings.storage_path.resolve()
+    target = (storage_root / folder / file_name).resolve()
 
     # Ensure the resolved path stays within the storage directory
-    if not str(target).startswith(str(settings.storage_path)):
+    if not target.is_relative_to(storage_root):
         raise ValueError("Invalid file path")
 
     size = 0
