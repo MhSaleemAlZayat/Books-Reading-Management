@@ -27,13 +27,15 @@ export function AuthProvider({ children }) {
     })
 
     if (!response.ok) {
+      const text = await response.text()
+      let message = 'Login failed'
       try {
-        const json = await response.json()
-        throw new Error(json?.error?.message || 'Login failed')
+        const json = JSON.parse(text)
+        if (json?.error?.message) message = json.error.message
       } catch {
-        const message = await response.text()
-        throw new Error(message || 'Login failed')
+        if (text) message = text
       }
+      throw new Error(message)
     }
 
     const result = await response.json()

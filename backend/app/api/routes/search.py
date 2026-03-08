@@ -37,7 +37,11 @@ def search_all(
         ]
 
     if type in ("all", "notes"):
-        matched_notes = list(db.scalars(select(Note).where(Note.content_text.ilike(q_like))))
+        matched_notes = list(
+            db.scalars(
+                select(Note).where(Note.user_id == current_user.id, Note.content_text.ilike(q_like))
+            )
+        )
         notes = [
             SearchNoteResult(
                 noteId=item.id,
@@ -52,7 +56,11 @@ def search_all(
         ]
 
     if type in ("all", "ocr"):
-        matched_snapshots = list(db.scalars(select(Snapshot).where(Snapshot.ocr_text.ilike(q_like))))
+        matched_snapshots = list(
+            db.scalars(
+                select(Snapshot).where(Snapshot.user_id == current_user.id, Snapshot.ocr_text.ilike(q_like))
+            )
+        )
         ocr = [
             SearchOcrResult(
                 snapshotId=item.id,

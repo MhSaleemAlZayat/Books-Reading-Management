@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, select
@@ -9,17 +11,6 @@ from app.core.security import hash_password
 from app.db.models import User, UserRole
 from app.db.session import SessionLocal, engine
 from app.services.storage import ensure_storage_dirs
-
-app = FastAPI(title=settings.app_name)
-register_error_handlers(app)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 def init_db() -> None:
@@ -45,9 +36,22 @@ def init_db() -> None:
         db.close()
 
 
-@app.on_event("startup")
-def on_startup() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     init_db()
+    yield
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
+register_error_handlers(app)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")

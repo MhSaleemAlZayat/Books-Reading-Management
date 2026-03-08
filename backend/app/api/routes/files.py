@@ -36,8 +36,9 @@ def get_voice_note_file(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    notes = list(db.scalars(select(Note).where(Note.audio_path.is_not(None))))
-    note = next((item for item in notes if Path(item.audio_path).name == file_name), None)
+    note = db.scalar(
+        select(Note).where(Note.audio_path.is_not(None), Note.audio_path.endswith(file_name))
+    )
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
     book = db.get(Book, note.book_id)
@@ -55,8 +56,9 @@ def get_snapshot_file(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    snapshots = list(db.scalars(select(Snapshot)))
-    item = next((snap for snap in snapshots if Path(snap.image_path).name == file_name), None)
+    item = db.scalar(
+        select(Snapshot).where(Snapshot.image_path.endswith(file_name))
+    )
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
     book = db.get(Book, item.book_id)

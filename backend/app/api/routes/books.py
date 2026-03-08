@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -73,14 +73,16 @@ def list_books(
     if language:
         stmt = stmt.where(Book.language == language)
 
-    all_items = list(db.scalars(stmt.order_by(Book.created_at.desc())))
-    start = (page - 1) * pageSize
-    end = start + pageSize
-    items = all_items[start:end]
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    items = list(
+        db.scalars(
+            stmt.order_by(Book.created_at.desc()).offset((page - 1) * pageSize).limit(pageSize)
+        )
+    )
 
     return BooksListResponse(
         items=[map_book(item) for item in items],
-        total=len(all_items),
+        total=total,
         page=page,
         pageSize=pageSize,
     )
@@ -102,6 +104,7 @@ def get_book(book_id: str, current_user: User = Depends(get_current_user), db: S
         format=book.format,
         shelf=book.shelf,
         ownerId=book.owner_id,
+        progressPercent=book.progress_percent,
         tags=[],
         file=map_file(book.file),
         createdAt=book.created_at,
